@@ -1,0 +1,243 @@
+import java.util.*;
+
+class Product {
+    int id;
+    String name, category;
+    int quantity;
+    double price;
+
+    public Product(int id, String name, String category, int quantity, double price) {
+        this.id = id;
+        this.name = name;
+        this.category = category;
+        this.quantity = quantity;
+        this.price = price;
+    }
+}
+
+class Node {
+    Product product;
+    Node left, right;
+
+    public Node(Product product) {
+        this.product = product;
+        left = right = null;
+    }
+}
+
+class InventoryBST {
+    private Node root;
+
+    public void insert(Product product) {
+        root = insertRec(root, product);
+    }
+
+    private Node insertRec(Node root, Product product) {
+        if (root == null) return new Node(product);
+        if (product.id < root.product.id) root.left = insertRec(root.left, product);
+        else if (product.id > root.product.id) root.right = insertRec(root.right, product);
+        return root;
+    }
+
+    public List<Product> inorder() {
+        List<Product> products = new ArrayList<>();
+        inorderRec(root, products);
+        return products;
+    }
+
+    private void inorderRec(Node root, List<Product> products) {
+        if (root != null) {
+            inorderRec(root.left, products);
+            products.add(root.product);
+            inorderRec(root.right, products);
+        }
+    }
+
+    public Product searchById(int id) {
+        Node node = search(root, id);
+        return node != null ? node.product : null;
+    }
+
+    private Node search(Node root, int id) {
+        if (root == null || root.product.id == id) return root;
+        if (root.product.id > id) return search(root.left, id);
+        return search(root.right, id);
+    }
+
+    public List<Product> searchByCategory(String category) {
+        List<Product> results = new ArrayList<>();
+        searchByCategoryRec(root, category.toLowerCase(), results);
+        return results;
+    }
+
+    private void searchByCategoryRec(Node root, String category, List<Product> results) {
+        if (root != null) {
+            searchByCategoryRec(root.left, category, results);
+            if (root.product.category.equalsIgnoreCase(category)) results.add(root.product);
+            searchByCategoryRec(root.right, category, results);
+        }
+    }
+
+    public void delete(int id) {
+        root = deleteRec(root, id);
+    }
+
+    private Node deleteRec(Node root, int id) {
+        if (root == null) return root;
+        if (id < root.product.id) root.left = deleteRec(root.left, id);
+        else if (id > root.product.id) root.right = deleteRec(root.right, id);
+        else {
+            if (root.left == null) return root.right;
+            else if (root.right == null) return root.left;
+            root.product = minValue(root.right);
+            root.right = deleteRec(root.right, root.product.id);
+        }
+        return root;
+    }
+
+    private Product minValue(Node root) {
+        Product min = root.product;
+        while (root.left != null) {
+            min = root.left.product;
+            root = root.left;
+        }
+        return min;
+    }
+}
+
+class InventorySystem {
+    private InventoryBST inventory;
+    private Scanner scanner;
+    private Map<Integer, Integer> cart; // Cart storing product ID and quantity
+
+    public InventorySystem() {
+        inventory = new InventoryBST();
+        scanner = new Scanner(System.in);
+        cart = new HashMap<>();
+        initializeInventory();
+    }
+
+    private void initializeInventory() {
+        inventory.insert(new Product(1, "Laptop", "Electronics", 10, 999.99));
+        inventory.insert(new Product(2, "Smartphone", "Electronics", 20, 699.99));
+        inventory.insert(new Product(3, "Headphones", "Electronics", 30, 149.99));
+        inventory.insert(new Product(4, "T-shirt", "Clothing", 50, 19.99));
+    }
+
+    private void displayProducts() {
+        List<Product> products = inventory.inorder();
+        System.out.printf("%-5s %-15s %-15s %-10s %-10s\n", "ID", "Name", "Category", "Quantity", "Price");
+        System.out.println("-".repeat(55));
+        for (Product p : products) {
+            System.out.printf("%-5d %-15s %-15s %-10d $%.2f\n", p.id, p.name, p.category, p.quantity, p.price);
+        }
+    }
+
+    private void addProduct() {
+        System.out.print("Enter Product ID: ");
+        int id = scanner.nextInt();
+        scanner.nextLine();
+        System.out.print("Enter Product Name: ");
+        String name = scanner.nextLine();
+        System.out.print("Enter Category: ");
+        String category = scanner.nextLine();
+        System.out.print("Enter Quantity: ");
+        int quantity = scanner.nextInt();
+        System.out.print("Enter Price: ");
+        double price = scanner.nextDouble();
+        inventory.insert(new Product(id, name, category, quantity, price));
+        System.out.println("Product added successfully!");
+    }
+
+    private void buyProduct() {
+        System.out.print("Enter Product ID to buy: ");
+        int id = scanner.nextInt();
+        Product product = inventory.searchById(id);
+        if (product != null && product.quantity > 0) {
+            System.out.print("Enter Quantity: ");
+            int qty = scanner.nextInt();
+            if (qty <= product.quantity) {
+                product.quantity -= qty;
+                cart.put(id, cart.getOrDefault(id, 0) + qty);
+                System.out.println(qty + " " + product.name + "(s) added to cart.");
+            } else {
+                System.out.println("Not enough stock available!");
+            }
+        } else {
+            System.out.println("Product not available or out of stock!");
+        }
+    }
+
+    private void checkout() {
+        if (cart.isEmpty()) {
+            System.out.println("Cart is empty! Add items before checkout.");
+            return;
+        }
+        System.out.println("\n===== Checkout =====");
+        double total = 0;
+        for (Map.Entry<Integer, Integer> entry : cart.entrySet()) {
+            Product product = inventory.searchById(entry.getKey());
+            int qty = entry.getValue();
+            double cost = product.price * qty;
+            total += cost;
+            System.out.printf("%-15s x%-3d $%.2f\n", product.name, qty, cost);
+        }
+        System.out.println("Total Amount: $" + total);
+        cart.clear();
+        System.out.println("Checkout successful!");
+    }
+
+    private void deleteProduct() {
+        System.out.print("Enter Product ID to delete: ");
+        int id = scanner.nextInt();
+        inventory.delete(id);
+        System.out.println("Product deleted successfully!");
+    }
+
+    public void menu() {
+        while (true) {
+            System.out.println("\n===== Inventory Menu =====");
+            System.out.println("1. View All Products");
+            System.out.println("2. Search Product by ID");
+            System.out.println("3. Search Product by Category");
+            System.out.println("4. Add Product");
+            System.out.println("5. Buy Product");
+            System.out.println("6. Delete Product");
+            System.out.println("7. Checkout");
+            System.out.println("8. Exit");
+            System.out.print("Enter your choice: ");
+            int choice = scanner.nextInt();
+
+            switch (choice) {
+                case 1 -> displayProducts();
+                case 2 -> {
+                    System.out.print("Enter Product ID: ");
+                    Product productById = inventory.searchById(scanner.nextInt());
+                    System.out.println(productById != null ? productById.name + " found!" : "Product not found!");
+                }
+                case 3 -> {
+                    scanner.nextLine();
+                    System.out.print("Enter Product Category: ");
+                    List<Product> productsByCategory = inventory.searchByCategory(scanner.nextLine());
+                    if (!productsByCategory.isEmpty()) productsByCategory.forEach(p -> System.out.println(p.name));
+                    else System.out.println("No products found in this category!");
+                }
+                case 4 -> addProduct();
+                case 5 -> buyProduct();
+                case 6 -> deleteProduct();
+                case 7 -> checkout();
+                case 8 -> {
+                    System.out.println("Exiting...");
+                    return;
+                }
+                default -> System.out.println("Invalid option! Please try again.");
+            }
+        }
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        new InventorySystem().menu();
+    }
+}
