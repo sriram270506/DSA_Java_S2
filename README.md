@@ -9,7 +9,7 @@ Features:
 2. Updating an item
 3. Deleting an item
 4. Viewing stock
-5. Searching and sorting products based on category, name, price, product ID 
+5. Searching and sorting products based on category, and product ID 
 6. User authentication using password (login - Customer and Admin)
 
 Tech Stack:
@@ -24,7 +24,7 @@ For Java -
 
 Workflow overview:
 1. Users/Admins login using their credentials (hashing to be implemented) 
-2. Users can browse products based on product names, category, prices and place orders using the website interface
+2. Users can browse products based on product ID or category and place orders using the website interface
 3. Admins can carry out CRUD (Create, Read, Update, Delete) operations 
 4. The frontend sends HTTP requests to the backend to carry out the operations 
 5. The backend receives the request, processes the requests, applies business logic and interacts with the database. 
